@@ -1,0 +1,158 @@
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local Credits = Instance.new("TextLabel")
+local TPPos = Instance.new("TextButton")
+local FindPos = Instance.new("TextButton")
+local Fechar = Instance.new("TextButton")
+local Pos = Instance.new("TextLabel")
+local TPQueue = Instance.new("TextButton")
+
+local savedPositions = {}
+
+ScreenGui.Name = "TeleportGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Frame.Position = UDim2.new(0.35, 0, 0.3, 0)
+Frame.Size = UDim2.new(0, 350, 0, 200)
+Frame.Active = true
+Frame.Draggable = true
+
+Title.Name = "Title"
+Title.Parent = Frame
+Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1.000
+Title.Size = UDim2.new(0, 350, 0, 40)
+Title.Font = Enum.Font.SourceSansBold
+Title.Text = "Coord & TP"
+Title.TextColor3 = Color3.fromRGB(0, 0, 0)
+Title.TextScaled = true
+Title.TextWrapped = true
+
+Credits.Name = "Credits"
+Credits.Parent = Frame
+Credits.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Credits.BackgroundTransparency = 1.000
+Credits.Position = UDim2.new(0.45, 0, 0.83, 0)
+Credits.Size = UDim2.new(0, 40, 0, 40)
+Credits.Font = Enum.Font.SourceSansBold
+Credits.Text = "HiruZT"
+Credits.TextColor3 = Color3.fromRGB(255, 0, 80)
+Credits.TextScaled = true
+Credits.TextWrapped = true
+
+TPPos.Name = "TPPos"
+TPPos.Parent = Frame
+TPPos.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+TPPos.Position = UDim2.new(0.05, 0, 0.65, 0)
+TPPos.Size = UDim2.new(0, 100, 0, 40)
+TPPos.Font = Enum.Font.SourceSansBold
+TPPos.Text = "TP"
+TPPos.TextColor3 = Color3.fromRGB(255, 255, 255)
+TPPos.TextScaled = true
+TPPos.TextWrapped = true
+
+FindPos.Name = "FindPos"
+FindPos.Parent = Frame
+FindPos.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+FindPos.Position = UDim2.new(0.65, 0, 0.65, 0)
+FindPos.Size = UDim2.new(0, 100, 0, 40)
+FindPos.Font = Enum.Font.SourceSansBold
+FindPos.Text = "Pegar"
+FindPos.TextColor3 = Color3.fromRGB(255, 255, 255)
+FindPos.TextScaled = true
+FindPos.TextWrapped = true
+
+TPQueue.Name = "TPQueue"
+TPQueue.Parent = Frame
+TPQueue.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+TPQueue.Position = UDim2.new(0.35, 0, 0.65, 0)
+TPQueue.Size = UDim2.new(0, 100, 0, 40)
+TPQueue.Font = Enum.Font.SourceSansBold
+TPQueue.Text = "TP Fila"
+TPQueue.TextColor3 = Color3.fromRGB(255, 255, 255)
+TPQueue.TextScaled = true
+TPQueue.TextWrapped = true
+
+Pos.Name = "Pos"
+Pos.Parent = Frame
+Pos.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Pos.BackgroundTransparency = 1.000
+Pos.Position = UDim2.new(0, 0, 0.3, 0)
+Pos.Size = UDim2.new(0, 350, 0, 50)
+Pos.Font = Enum.Font.SourceSansBold
+Pos.Text = ""
+Pos.TextColor3 = Color3.fromRGB(0, 0, 0)
+Pos.TextScaled = true
+Pos.TextWrapped = true
+
+Fechar.Name = "Fechar"
+Fechar.Parent = Frame
+Fechar.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+Fechar.Position = UDim2.new(0.925, 0, 0.02, 0)
+Fechar.Size = UDim2.new(0, 20, 0, 20)
+Fechar.Font = Enum.Font.SourceSansBold
+Fechar.Text = "X"
+Fechar.TextColor3 = Color3.fromRGB(255, 255, 255)
+Fechar.TextScaled = true
+Fechar.TextWrapped = true
+
+FindPos.MouseButton1Click:Connect(function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character then
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            local posStr = tostring(humanoidRootPart.Position)
+            table.insert(savedPositions, posStr)
+            Pos.Text = posStr
+            setclipboard(posStr)
+        end
+    end
+end)
+
+TPPos.MouseButton1Click:Connect(function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if humanoidRootPart then
+        local posText = Pos.Text
+        if posText ~= "" then
+            local x, y, z = posText:match("([%d.-]+), ([%d.-]+), ([%d.-]+)")
+            if x and y and z then
+                humanoidRootPart.CFrame = CFrame.new(tonumber(x), tonumber(y), tonumber(z))
+            else
+                warn("Falha ao extrair coordenadas")
+            end
+        else
+            warn("Nenhuma coordenada encontrada")
+        end
+    else
+        warn("HumanoidRootPart não encontrado")
+    end
+end)
+
+TPQueue.MouseButton1Click:Connect(function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if humanoidRootPart and #savedPositions > 0 then
+        for _, posStr in ipairs(savedPositions) do
+            local x, y, z = posStr:match("([%d.-]+), ([%d.-]+), ([%d.-]+)")
+            if x and y and z then
+                humanoidRootPart.CFrame = CFrame.new(tonumber(x), tonumber(y), tonumber(z))
+                wait(1)
+            end
+        end
+    end
+end)
+
+Fechar.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
