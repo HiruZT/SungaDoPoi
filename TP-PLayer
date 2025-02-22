@@ -1,0 +1,134 @@
+local Gui = Instance.new("ScreenGui")
+	local BackGround = Instance.new("Frame")
+	local PlayerTextBox = Instance.new("TextBox")
+	local ExitGuiButton = Instance.new("TextButton")
+	local TeleportButton = Instance.new("ImageButton")
+	local FastTeleportButton = Instance.new("TextButton")
+
+	Gui.Name = "Gui"
+	Gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	Gui.ResetOnSpawn = false
+
+	BackGround.Name = "BackGround"
+	BackGround.Parent = Gui
+	BackGround.Active = true
+	BackGround.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	BackGround.BorderColor3 = Color3.fromRGB(255, 0, 80)
+	BackGround.BorderSizePixel = 0
+	BackGround.Draggable = true
+	BackGround.Position = UDim2.new(0.414194375, -35, 0.447971016, -5)
+	BackGround.Size = UDim2.new(0, 220, 0, 70)
+
+	PlayerTextBox.Name = "PlayerTextBox"
+	PlayerTextBox.Parent = BackGround
+	PlayerTextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	PlayerTextBox.BorderColor3 = Color3.fromRGB(255, 0, 80)
+	PlayerTextBox.BorderSizePixel = 3
+	PlayerTextBox.Position = UDim2.new(0.0606889203, 0, 0.156255662, 0)
+	PlayerTextBox.Size = UDim2.new(0, 189, 0, 47)
+	PlayerTextBox.ClearTextOnFocus = false
+	PlayerTextBox.Font = Enum.Font.JosefinSans
+	PlayerTextBox.PlaceholderText = "Nome do jogador"
+	PlayerTextBox.Text = ""
+	PlayerTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	PlayerTextBox.TextScaled = true
+	PlayerTextBox.TextSize = 14.000
+	PlayerTextBox.TextWrapped = true
+
+	ExitGuiButton.Name = "ExitGuiButton"
+	ExitGuiButton.Parent = BackGround
+	ExitGuiButton.BackgroundColor3 = Color3.fromRGB(255, 0, 4)
+	ExitGuiButton.BorderColor3 = Color3.fromRGB(50, 50, 50)
+	ExitGuiButton.BorderSizePixel = 3
+	ExitGuiButton.Position = UDim2.new(0.853980601, 0, -0.304931432, 0)
+	ExitGuiButton.Size = UDim2.new(0, 21, 0, 21)
+	ExitGuiButton.Font = Enum.Font.JosefinSans
+	ExitGuiButton.Text = "X"
+	ExitGuiButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ExitGuiButton.TextSize = 14.000
+	ExitGuiButton.TextWrapped = true
+
+	TeleportButton.Name = "TeleportButton"
+	TeleportButton.Parent = BackGround
+	TeleportButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	TeleportButton.BorderColor3 = Color3.fromRGB(50, 50, 50)
+	TeleportButton.BorderSizePixel = 3
+	TeleportButton.Position = UDim2.new(0.763071358, 0, -0.304931432, 0)
+	TeleportButton.Size = UDim2.new(0, 20, 0, 20)
+	TeleportButton.Image = "http://www.roblox.com/asset/?id=7676225854"
+
+	FastTeleportButton.Name = "FastTeleportButton"
+	FastTeleportButton.Parent = BackGround
+	FastTeleportButton.BackgroundColor3 = Color3.fromRGB(255, 64, 67)
+	FastTeleportButton.BorderColor3 = Color3.fromRGB(50, 50, 50)
+	FastTeleportButton.BorderSizePixel = 3
+	FastTeleportButton.Position = UDim2.new(0.672162294, 0, -0.304931402, 0)
+	FastTeleportButton.Size = UDim2.new(0, 20, 0, 20)
+	FastTeleportButton.Font = Enum.Font.SourceSans
+	FastTeleportButton.Text = ""
+	FastTeleportButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+	FastTeleportButton.TextSize = 14.000
+
+	local UIS = game:GetService("UserInputService")
+	local guiMode = true
+	local fastTpMode = false
+	local fastWhileMode = false
+
+	UIS.InputBegan:Connect(function (UserInput)
+		if UserInput.UserInputType == Enum.UserInputType.Keyboard and UserInput.KeyCode == Enum.KeyCode.Insert then
+			if guiMode == true then
+				Gui.Enabled = false
+				guiMode = false
+			else
+				Gui.Enabled = true
+				guiMode = true
+			end
+		end
+	end)
+
+	PlayerTextBox.FocusLost:Connect(function(enter)
+		if enter then
+			local boxText = PlayerTextBox.Text
+			local plr1 = game.Players.LocalPlayer.Character
+			local plr2 = game:GetService("Players"):FindFirstChild(boxText)
+
+			plr1.HumanoidRootPart.CFrame = plr2.Character.HumanoidRootPart.CFrame
+		end
+	end)
+
+	ExitGuiButton.MouseButton1Click:Connect(function()
+		Gui:Destroy()
+	end)
+
+	TeleportButton.MouseButton1Click:Connect(function()
+		local playerText = PlayerTextBox.Text
+		local p1 = game.Players.LocalPlayer.Character
+		local p2 = game:GetService("Players"):FindFirstChild(playerText)
+	
+		p1.HumanoidRootPart.CFrame = p2.Character.HumanoidRootPart.CFrame
+	end)
+
+	FastTeleportButton.MouseButton1Click:Connect(function()
+		if fastTpMode == true then
+			FastTeleportButton.BackgroundColor3 = Color3.fromRGB(255, 64, 67)
+			fastTpMode = false
+			if fastTpMode == false then
+				fastWhileMode = false
+			end
+		else
+			FastTeleportButton.BackgroundColor3 = Color3.fromRGB(67, 255, 67)
+			fastTpMode = true
+			if fastTpMode == true then
+				fastWhileMode = true
+				while fastWhileMode == true do
+					wait()
+					local plText = PlayerTextBox.Text
+					local pl1 = game.Players.LocalPlayer.Character
+					local pl2 = game:GetService("Players"):FindFirstChild(plText)
+					
+					pl1.HumanoidRootPart.CFrame = pl2.Character.HumanoidRootPart.CFrame
+				end
+			end
+		end
+	end)
