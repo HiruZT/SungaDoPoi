@@ -17,17 +17,19 @@ local VehicleTab = X.New({ Title = "VEICULO" })
 local players = game:GetService("Players")
 local localPlayer = players.LocalPlayer
 local runService = game:GetService("RunService")
-local espEnabled = false
-local espConnections = {}
+local Camera = workspace.CurrentCamera
 
-local function createESPBox(player)
+local esphEnabled = false
+local esphConnections = {}
+
+local function createESPhBox(player)
     if not player.Character then
         player.CharacterAdded:Wait()
     end
 
-    if player.Character and not player.Character:FindFirstChild(player.Name .. "_ESP") then
+    if player.Character and not player.Character:FindFirstChild(player.Name .. "_ESPh") then
         local highlight = Instance.new("Highlight")
-        highlight.Name = player.Name .. "_ESP"
+        highlight.Name = player.Name .. "_ESPh"
         highlight.Adornee = player.Character
         highlight.FillTransparency = 1
         highlight.OutlineTransparency = 0
@@ -42,56 +44,55 @@ local function createESPBox(player)
         highlight.Parent = player.Character
     end
 end
-local function enableESP()
-    espEnabled = true
+local function enableESPh()
+    esphEnabled = true
 
     for _, player in pairs(players:GetPlayers()) do
         if player ~= localPlayer then
-            createESPBox(player)
+            createESPhBox(player)
         end
     end
 
-    espConnections[#espConnections + 1] = players.PlayerAdded:Connect(function(player)
+    esphConnections[#esphConnections + 1] = players.PlayerAdded:Connect(function(player)
         player.CharacterAdded:Connect(function()
-            if espEnabled then
-                createESPBox(player)
+            if esphEnabled then
+                createESPhBox(player)
             end
         end)
     end)
 
-    espConnections[#espConnections + 1] = runService.RenderStepped:Connect(function()
+    esphConnections[#esphConnections + 1] = runService.RenderStepped:Connect(function()
         for _, player in pairs(players:GetPlayers()) do
             if player ~= localPlayer then
-                createESPBox(player)
+                createESPhBox(player)
             end
         end
     end)
 end
-local function disableESP()
-    espEnabled = false
+local function disableESPh()
+    esphEnabled = false
 
-    for _, conn in ipairs(espConnections) do
+    for _, conn in ipairs(esphConnections) do
         conn:Disconnect()
     end
-    espConnections = {}
+    esphConnections = {}
 
     for _, player in pairs(players:GetPlayers()) do
         if player.Character then
-            local esp = player.Character:FindFirstChild(player.Name .. "_ESP")
-            if esp then esp:Destroy() end
+            local esph = player.Character:FindFirstChild(player.Name .. "_ESPh")
+            if esph then esph:Destroy() end
         end
     end
 end
 
 VisualTab.Toggle({
-    Text = "ESP",
+    Text = "ESP Chams",
     Callback = function(Value)
         if Value then
-            enableESP()
+            enableESPh()
         else
-            disableESP()
+            disableESPh()
         end
-        print("ESP:", Value)
     end,
     Enabled = false,
     Menu = {
@@ -102,7 +103,6 @@ VisualTab.Toggle({
 })
 
 -- VISUAL ESP LINES --------------------------------------------------------------------
-local Camera = workspace.CurrentCamera
 local espLinesEnabled = false
 local espLines = {}
 local updateConnection
@@ -172,7 +172,6 @@ VisualTab.Toggle({
         else
             disableESPLines()
         end
-        print("ESP Line:", Value)
     end,
     Enabled = false,
     Menu = {
@@ -191,7 +190,7 @@ local function createESPBox(player)
 
     local box = Drawing.new("Square")
     box.Visible = false
-    box.Color = Color3.new(0, 0, 0)
+    box.Color = Color3.new(0, 0, 0) 
     box.Thickness = 2
     box.Filled = false
 
@@ -206,18 +205,32 @@ end
 local function updateESP()
     for player, box in pairs(espBoxes) do
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            local hrp = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
 
-            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-            if onScreen then
-                local sizeX = 80 
-                local sizeY = 120 
+            if head and humanoid then
+                local feetPosition = hrp.Position - Vector3.new(0, humanoid.HipHeight, 0)
+                local headPosition = head.Position 
 
-                local boxPosition = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
+                local feetScreen, feetVisible = Camera:WorldToViewportPoint(feetPosition)
+                local headScreen, headVisible = Camera:WorldToViewportPoint(headPosition)
 
-                box.Size = Vector2.new(sizeX, sizeY)
-                box.Position = boxPosition
-                box.Visible = true
+                if feetVisible and headVisible then
+                    local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
+                    local scaleFactor = 1000 / distance 
+
+                    local height = math.abs(headScreen.Y - feetScreen.Y)
+                    local width = height / 2.5 
+
+                    local boxPosition = Vector2.new(headScreen.X - width / 2, headScreen.Y)
+
+                    box.Size = Vector2.new(width, height)
+                    box.Position = boxPosition
+                    box.Visible = true
+                else
+                    box.Visible = false
+                end
             else
                 box.Visible = false
             end
@@ -250,19 +263,206 @@ local function disableESP()
 end
 
 VisualTab.Toggle({
-    Text = "ESP Box",
+    Text = "ESP Box (Mini)",
     Callback = function(Value)
         if Value then
             enableESP()
         else
             disableESP()
         end
-        print("ESP Box:", Value)
     end,
     Enabled = false,
     Menu = {
         Information = function(self)
             X.Banner({ Text = "Veja jogadores através de paredes com caixas 2D." })
+        end
+    }
+})
+
+-- VISUAL ESP VIDA ---------------------------------------------------------------------
+local espVidaEnabled = false
+local espVidaConnections = {}
+
+local function createHealthESP(player)
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        local head = player.Character:FindFirstChild("Head")
+
+        if humanoid and head then
+            local billboard = head:FindFirstChild("HealthESP")
+
+            if not billboard then
+                billboard = Instance.new("BillboardGui")
+                billboard.Name = "HealthESP"
+                billboard.Size = UDim2.new(4, 0, 1, 0)
+                billboard.StudsOffset = Vector3.new(0, 2, 0)
+                billboard.AlwaysOnTop = true
+
+                local textLabel = Instance.new("TextLabel")
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.TextColor3 = Color3.new(1, 1, 1)
+                textLabel.TextStrokeTransparency = 0
+                textLabel.Font = Enum.Font.SourceSansBold
+                textLabel.TextScaled = true
+                textLabel.Parent = billboard
+
+                billboard.Parent = head
+            end
+        end
+    end
+end
+local function updateHealthESP()
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            local head = player.Character:FindFirstChild("Head")
+            local billboard = head and head:FindFirstChild("HealthESP")
+
+            if humanoid and billboard then
+                local textLabel = billboard:FindFirstChildOfClass("TextLabel")
+                if textLabel then
+                    textLabel.Text = string.format("%d%%", (humanoid.Health / humanoid.MaxHealth) * 100)
+                end
+            end
+        end
+    end
+end
+local function enableHealthESP()
+    espVidaEnabled = true
+    espVidaConnections[#espVidaConnections + 1] = runService.RenderStepped:Connect(function()
+        for _, player in pairs(players:GetPlayers()) do
+            if player ~= localPlayer then
+                createHealthESP(player)
+            end
+        end
+        updateHealthESP()
+    end)
+end
+local function disableHealthESP()
+    espVidaEnabled = false
+    for _, conn in ipairs(espVidaConnections) do
+        conn:Disconnect()
+    end
+    espVidaConnections = {}
+
+    for _, player in pairs(players:GetPlayers()) do
+        if player.Character then
+            local head = player.Character:FindFirstChild("Head")
+            if head then
+                local billboard = head:FindFirstChild("HealthESP")
+                if billboard then billboard:Destroy() end
+            end
+        end
+    end
+end
+
+VisualTab.Toggle({
+    Text = "ESP Vida",
+    Callback = function(Value)
+        if Value then
+            enableHealthESP()
+        else
+            disableHealthESP()
+        end
+    end,
+    Enabled = false,
+    Menu = {
+        Information = function(self)
+            X.Banner({ Text = "Veja a vida dos jogadores da sessão." })
+        end
+    }
+})
+
+-- VISUAL ESP DISTANCIA ----------------------------------------------------------------
+local espEnabled = false
+local espDistances = {}
+local espConnection
+
+local function createESPDist(player)
+    if player == localPlayer then return end
+
+    local textLabel = Drawing.new("Text")
+    textLabel.Visible = false
+    textLabel.Color = Color3.new(1, 1, 1) 
+    textLabel.Size = 16
+    textLabel.Center = true
+    textLabel.Outline = true
+
+    espDistances[player] = textLabel
+end
+local function removeESPDist(player)
+    if espDistances[player] then
+        espDistances[player]:Remove()
+        espDistances[player] = nil
+    end
+end
+local function updateESPDist()
+    if not espEnabled then return end 
+
+    for player, textLabel in pairs(espDistances) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+            if onScreen then
+                local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
+                textLabel.Text = string.format("%.2f m", distance)
+
+                textLabel.Position = Vector2.new(pos.X, pos.Y - 40) 
+                textLabel.Visible = true
+            else
+                textLabel.Visible = false
+            end
+        else
+            textLabel.Visible = false
+        end
+    end
+end
+local function enableESPDist()
+    espEnabled = true
+
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= localPlayer then
+            createESPDist(player)
+        end
+    end
+
+    players.PlayerAdded:Connect(function(player)
+        createESPDist(player)
+    end)
+
+    if not espConnection then
+        espConnection = runService.RenderStepped:Connect(updateESPDist)
+    end
+end
+local function disableESPDist()
+    espEnabled = false
+
+    if espConnection then
+        espConnection:Disconnect()
+        espConnection = nil
+    end
+
+    for _, textLabel in pairs(espDistances) do
+        textLabel:Remove()
+    end
+    espDistances = {}
+end
+
+VisualTab.Toggle({
+    Text = "ESP Distância",
+    Callback = function(Value)
+        if Value then
+            enableESPDist()
+        else
+            disableESPDist()
+        end
+    end,
+    Enabled = false,
+    Menu = {
+        Information = function(self)
+            X.Banner({ Text = "Veja a distância dos jogadores na sua visão." })
         end
     }
 })
@@ -295,7 +495,6 @@ VisualTab.Toggle({
                 player.PlayerGui.MiraScreenGui:Destroy()
             end
         end
-        print("Crosshair:", Value)
     end,
     Enabled = false,
     Menu = {
@@ -306,63 +505,58 @@ VisualTab.Toggle({
 })
 
 -- MIRA AIMBOT -------------------------------------------------------------------------
-local aimlockEnabled = false
 local UserInputService = game:GetService("UserInputService")
 local smoothness = 0.1
 local aimConnection
+local ignoreTeam = true
 
-local function findClosestPlayer()
-    local localPlayer = players.LocalPlayer
-    local closestPlayer = nil
+local function findClosestTarget()
+    local closestTarget = nil
     local shortestDistance = math.huge
 
     for _, player in ipairs(players:GetPlayers()) do
         if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            if ignoreTeam and player.Team == localPlayer.Team then
+                continue -- Ignora aliados se a opção estiver ativada
+            end
+
             local head = player.Character.Head
             local distance = (localPlayer.Character.HumanoidRootPart.Position - head.Position).magnitude
 
             if distance < shortestDistance then
                 shortestDistance = distance
-                closestPlayer = player
+                closestTarget = player
             end
         end
     end
 
-    return closestPlayer
+    return closestTarget
 end
-local function enableAimbot()
-    if aimConnection then aimConnection:Disconnect() end
-    aimlockEnabled = true
-    aimConnection = runService.RenderStepped:Connect(function()
-        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) and aimlockEnabled then
-            local closestPlayer = findClosestPlayer()
-
-            if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("Head") then
-                local head = closestPlayer.Character.Head
-                local targetPosition = CFrame.new(Camera.CFrame.Position, head.Position)
-
-                Camera.CFrame = Camera.CFrame:Lerp(targetPosition, smoothness)
+local function toggleAimbot(state)
+    if state then
+        if aimConnection then aimConnection:Disconnect() end
+        aimConnection = runService.RenderStepped:Connect(function()
+            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+                local closestTarget = findClosestTarget()
+                if closestTarget and closestTarget.Character and closestTarget.Character:FindFirstChild("Head") then
+                    local head = closestTarget.Character.Head
+                    local targetPosition = CFrame.new(Camera.CFrame.Position, head.Position)
+                    Camera.CFrame = Camera.CFrame:Lerp(targetPosition, smoothness)
+                end
             end
+        end)
+    else
+        if aimConnection then
+            aimConnection:Disconnect()
+            aimConnection = nil
         end
-    end)
-end
-local function disableAimbot()
-    aimlockEnabled = false
-    if aimConnection then
-        aimConnection:Disconnect()
-        aimConnection = nil
     end
 end
 
 AimTab.Toggle({
     Text = "Aimbot",
     Callback = function(Value)
-        if Value then
-            enableAimbot()
-        else
-            disableAimbot()
-        end
-        print("Aimbot:", Value)
+        toggleAimbot(Value)
     end,
     Enabled = false,
     Menu = {
@@ -384,6 +578,20 @@ AimTab.Slider({
     Menu = {
         Information = function(self)
             X.Banner({ Text = "Suavidade do Aimbot." })
+        end
+    }
+})
+
+-- MIRA AIMBOT IGNORAR TIME ------------------------------------------------------------
+AimTab.Toggle({
+    Text = "Aimbot ignorar amigo",
+    Callback = function(Value)
+        ignoreTeam = Value
+    end,
+    Enabled = true,
+    Menu = {
+        Information = function(self)
+            X.Banner({ Text = "Aimbot não ativa com seu próprio time." })
         end
     }
 })
@@ -558,3 +766,85 @@ VehicleTab.Button({
 })
 
 -- VEICULO VELOCIMETRO -----------------------------------------------------------------
+local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+local lastPosition = Vector3.new()
+local speedTextObjects = {}
+
+local function createSpeedText(player)
+    if not player.Character then return end
+    
+    local head = player.Character:FindFirstChild("Head")
+    if not head then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "SpeedESP"
+    billboard.Adornee = head
+    billboard.Size = UDim2.new(0, 100, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.AlwaysOnTop = true
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.TextScaled = true
+    textLabel.Text = ""
+    textLabel.Parent = billboard
+
+    billboard.Parent = head
+    speedTextObjects[player] = textLabel
+end
+local function updateSpeed()
+    while wait(1) do
+        if not character or not humanoid then continue end
+
+        local seat = humanoid.SeatPart
+        if seat and seat:IsA("VehicleSeat") then 
+            local currentPosition = character.PrimaryPart.Position
+            local speedStudsPerSecond = (currentPosition - lastPosition).Magnitude / 0.05
+            --local speedKMH = math.floor(speedStudsPerSecond * 3.6)
+            lastPosition = currentPosition
+
+            local textLabel = speedTextObjects[localPlayer]
+            if textLabel then
+                --textLabel.Text = tostring(speedKMH) .. " km/h"
+                textLabel.Text = tostring(speedStudsPerSecond) .. "%.2f km/h"
+            end
+        else
+            local textLabel = speedTextObjects[localPlayer]
+            if textLabel then
+                textLabel.Text = ""
+            end
+        end
+    end
+end
+local function enableSpeedESP()
+    createSpeedText(localPlayer)
+    task.spawn(updateSpeed)
+end
+
+VehicleTab.Toggle({
+    Text = "Velocímetro",
+    Callback = function(Value)
+        if Value then
+            enableSpeedESP()
+        else
+            if speedTextObjects[localPlayer] then
+                speedTextObjects[localPlayer]:Destroy()
+                speedTextObjects[localPlayer] = nil
+            end
+        end
+        print("Velocímetro:", Value)
+    end,
+    Enabled = false,
+    Menu = {
+        Information = function(self)
+            X.Banner({ Text = "Exibe a velocidade do seu veículo em km/h." })
+        end
+    }
+})
+
+
+repeat wait() until game:IsLoaded()
