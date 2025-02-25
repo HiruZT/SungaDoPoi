@@ -190,7 +190,7 @@ local function createESPBox(player)
 
     local box = Drawing.new("Square")
     box.Visible = false
-    box.Color = Color3.new(0, 0, 0) 
+    box.Color = Color3.new(1, 1, 1) 
     box.Thickness = 2
     box.Filled = false
 
@@ -562,6 +562,54 @@ AimTab.Toggle({
     Menu = {
         Information = function(self)
             X.Banner({ Text = "Modo Guuh." })
+        end
+    }
+})
+
+-- MIRA AIMBOT SILENT AIM 3 ------------------------------------------------------------
+local silentAim3Enabled = false
+
+local function modifyHitboxes()
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local head = player.Character.Head
+            head.Size = Vector3.new(5, 5, 5) 
+            head.Transparency = 1 
+            head.CanCollide = false
+        end
+    end
+end
+local function enableSilentAim3()
+    silentAim3Enabled = true
+    modifyHitboxes()
+    players.PlayerAdded:Connect(function(player)
+        player.CharacterAdded:Connect(modifyHitboxes)
+    end)
+end
+local function disableSilentAim3()
+    silentAim3Enabled = false
+    for _, player in pairs(players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("Head") then
+            local head = player.Character.Head
+            head.Size = Vector3.new(1, 1, 1) 
+            head.Transparency = 0
+        end
+    end
+end
+
+AimTab.Toggle({
+    Text = "Hitbox (cabeça 8x maior)",
+    Callback = function(Value)
+        if Value then
+            enableSilentAim3()
+        else
+            disableSilentAim3()
+        end
+    end,
+    Enabled = false,
+    Menu = {
+        Information = function(self)
+            X.Banner({ Text = "Cabeça dos inimigos 8x maiores." })
         end
     }
 })
