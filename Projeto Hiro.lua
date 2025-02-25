@@ -14,6 +14,7 @@ local PlayerTab = X.New({ Title = "JOGADOR" })
 local VehicleTab = X.New({ Title = "VEICULO" })
 
 -- VISUAL ESP --------------------------------------------------------------------------
+local UserInputService = game:GetService("UserInputService")
 local players = game:GetService("Players")
 local localPlayer = players.LocalPlayer
 local runService = game:GetService("RunService")
@@ -505,27 +506,41 @@ VisualTab.Toggle({
 })
 
 -- MIRA AIMBOT -------------------------------------------------------------------------
-local UserInputService = game:GetService("UserInputService")
 local smoothness = 0.1
 local aimConnection
 local ignoreTeam = true
+local fovRadius = 150 
 
-local function findClosestTarget()
+local function isVisible(target)
+    local origin = Camera.CFrame.Position
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {localPlayer.Character}
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+    local result = workspace:Raycast(origin, (target.Position - origin).Unit * 500, raycastParams)
+    return result == nil or result.Instance:IsDescendantOf(target.Parent) 
+end
+local function findTargetByFOV()
     local closestTarget = nil
     local shortestDistance = math.huge
+    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 
     for _, player in ipairs(players:GetPlayers()) do
         if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Head") then
             if ignoreTeam and player.Team == localPlayer.Team then
-                continue -- Ignora aliados se a opção estiver ativada
+                continue
             end
 
             local head = player.Character.Head
-            local distance = (localPlayer.Character.HumanoidRootPart.Position - head.Position).magnitude
+            local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
 
-            if distance < shortestDistance then
-                shortestDistance = distance
-                closestTarget = player
+            if onScreen and isVisible(head) then
+                local distanceFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+
+                if distanceFromCenter < fovRadius and distanceFromCenter < shortestDistance then
+                    shortestDistance = distanceFromCenter
+                    closestTarget = player
+                end
             end
         end
     end
@@ -537,7 +552,7 @@ local function toggleAimbot(state)
         if aimConnection then aimConnection:Disconnect() end
         aimConnection = runService.RenderStepped:Connect(function()
             if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-                local closestTarget = findClosestTarget()
+                local closestTarget = findTargetByFOV()
                 if closestTarget and closestTarget.Character and closestTarget.Character:FindFirstChild("Head") then
                     local head = closestTarget.Character.Head
                     local targetPosition = CFrame.new(Camera.CFrame.Position, head.Position)
@@ -598,7 +613,7 @@ local function disableSilentAim3()
 end
 
 AimTab.Toggle({
-    Text = "Hitbox (cabeça 8x maior)",
+    Text = "Muringa (Hitbox)",
     Callback = function(Value)
         if Value then
             enableSilentAim3()
@@ -893,6 +908,7 @@ VehicleTab.Toggle({
         end
     }
 })
+
 
 
 repeat wait() until game:IsLoaded()
