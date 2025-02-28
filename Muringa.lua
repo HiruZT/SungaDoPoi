@@ -14,7 +14,9 @@ local AIM = UI.New({
 local VISUAL = UI.New({
     Title = "VISUAL"
 })
-
+local FPS = UI.New({
+	Title = "OPTIMIZER"
+})
 
 -- Suport ------------------------------------------------------------------------------
 local services = setmetatable({}, {__index = function(_, k) return cloneref(game:GetService(k)) end})
@@ -252,6 +254,142 @@ VISUAL.Toggle({
             enableESP()
         else
             disableESP()
+        end
+    end,
+    Enabled = false
+})
+
+
+-- FPS+ OPTIMIZER ----------------------------------------------------------------------
+local setFPS = setfpscap(400)
+local defaultFPS = 240
+local debounceTime = 0.1
+local lastChangeTime = 0
+
+FPS.Slider({
+    Text = "FPS Limite",
+    Callback = function(Value)
+        local currentTime = tick()
+
+        if currentTime - lastChangeTime > debounceTime then
+            pcall(function()
+                setFPS(math.clamp(Value, 60, 400))
+            end)
+            lastChangeTime = currentTime  
+        end
+    end,
+    Min = 60,
+    Max = 400,
+    Def = defaultFPS
+})
+
+
+FPS.Toggle({
+    Text = "Desabilitar Partes Não Visíveis",
+    Callback = function(Value)
+        game:GetService("Workspace").DescendantAdded:Connect(function(child)
+            if child:IsA("BasePart") then
+                if Value then
+                    child:SetAttribute("ShouldRender", false)
+                else
+                    child:SetAttribute("ShouldRender", true)
+                end
+            end
+        end)
+    end,
+    Enabled = false
+})
+FPS.Toggle({
+    Text = "Usar LOD (Level of Detail)",
+    Callback = function(Value)
+        local function updateLOD(player)
+            for _, object in pairs(workspace:GetDescendants()) do
+                if object:IsA("Model") then
+                    local distance = (object.PrimaryPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                    if distance > 50 then
+                        if Value then
+                            object:FindFirstChild("HighDetailModel"):Destroy()
+                            object:FindFirstChild("LowDetailModel"):Clone().Parent = object
+                        end
+                    else
+                        if Value then
+                            object:FindFirstChild("LowDetailModel"):Destroy()
+                            object:FindFirstChild("HighDetailModel"):Clone().Parent = object
+                        end
+                    end
+                end
+            end
+        end
+        
+        game:GetService("RunService").Heartbeat:Connect(function()
+            updateLOD(game.Players.LocalPlayer)
+        end)
+    end,
+    Enabled = false
+})
+FPS.Toggle({
+    Text = "Limitar Quantidade de Partes",
+    Callback = function(Value)
+        local maxParts = 500
+        local partCount = 0
+        
+        game:GetService("RunService").Heartbeat:Connect(function()
+            if Value then
+                partCount = 0
+                for _, object in pairs(workspace:GetDescendants()) do
+                    if object:IsA("BasePart") then
+                        partCount = partCount + 1
+                        if partCount > maxParts then
+                            object:Destroy()  
+                        end
+                    end
+                end
+            end
+        end)
+    end,
+    Enabled = false
+})
+FPS.Toggle({
+    Text = "Desativar Efeitos Gráficos Pesados",
+    Callback = function(Value)
+        if Value then
+            game:GetService("Lighting").GlobalShadows = false  
+            game:GetService("Lighting").Ambient = Color3.fromRGB(255, 255, 255) 
+            game:GetService("Lighting").Brightness = 0.5  
+        else
+            game:GetService("Lighting").GlobalShadows = true 
+            game:GetService("Lighting").Ambient = Color3.fromRGB(128, 128, 128) 
+            game:GetService("Lighting").Brightness = 2 
+        end
+    end,
+    Enabled = false
+})
+FPS.Toggle({
+    Text = "Ocultar Partes Dinâmicas",
+    Callback = function(Value)
+        game:GetService("Workspace").DescendantAdded:Connect(function(child)
+            if child:IsA("Part") then
+                if Value then
+                    child.Transparency = 1 
+                    child.CanCollide = false 
+                else
+                    child.Transparency = 0 
+                    child.CanCollide = true 
+                end
+            end
+        end)
+    end,
+    Enabled = false
+})
+FPS.Toggle({
+    Text = "Mover Tarefas Pesadas para Ociosidade",
+    Callback = function(Value)
+        if Value then
+            game:GetService("RunService").Stepped:Connect(function()
+            end)
+        else
+            game:GetService("RunService").Heartbeat:Connect(function()
+            end)
         end
     end,
     Enabled = false
