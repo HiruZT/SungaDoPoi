@@ -261,29 +261,39 @@ VISUAL.Toggle({
 
 
 -- FPS+ OPTIMIZER ----------------------------------------------------------------------
-local setFPS = setfpscap(400)
-local defaultFPS = 240
-local debounceTime = 0.05
-local lastChangeTime = 0
-
+local setFPS = setfpscap(800)
+local defaultFPS = 60
 FPS.Slider({
     Text = "FPS Limite",
     Callback = function(Value)
-        local currentTime = tick()
-
-        if currentTime - lastChangeTime > debounceTime then
-            pcall(function()
-                setFPS(math.clamp(Value, 60, 400))
-            end)
-            lastChangeTime = currentTime  
-        end
+        pcall(function() setFPS(math.clamp(Value, 60, 800)) end)
+		task.wait(0.01)
     end,
     Min = 60,
-    Max = 400,
+    Max = 800,
     Def = defaultFPS
 })
 
-
+local originalTextureID = "rbxassetid://4531891749"  
+local lowQualityTextureID = "rbxassetid://4312794504"  
+FPS.Toggle({
+    Text = "Reduzir Qualidade das Texturas",
+    Callback = function(Value)
+        for _, object in pairs(workspace:GetDescendants()) do
+            if object:IsA("BasePart") then
+                local texture = object:FindFirstChildOfClass("Decal")
+                if texture then
+                    if Value then
+                        texture.Texture = lowQualityTextureID
+                    else
+                        texture.Texture = originalTextureID
+                    end
+                end
+            end
+        end
+    end,
+    Enabled = false
+})
 FPS.Toggle({
     Text = "Desabilitar Partes Não Visíveis",
     Callback = function(Value)
@@ -339,23 +349,6 @@ FPS.Toggle({
             game:GetService("Lighting").Ambient = Color3.fromRGB(128, 128, 128) 
             game:GetService("Lighting").Brightness = 2 
         end
-    end,
-    Enabled = false
-})
-FPS.Toggle({
-    Text = "Ocultar Partes Dinâmicas",
-    Callback = function(Value)
-        game:GetService("Workspace").DescendantAdded:Connect(function(child)
-            if child:IsA("Part") then
-                if Value then
-                    child.Transparency = 1 
-                    child.CanCollide = false 
-                else
-                    child.Transparency = 0 
-                    child.CanCollide = true 
-                end
-            end
-        end)
     end,
     Enabled = false
 })
