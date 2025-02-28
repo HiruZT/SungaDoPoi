@@ -263,7 +263,7 @@ VISUAL.Toggle({
 -- FPS+ OPTIMIZER ----------------------------------------------------------------------
 local setFPS = setfpscap(400)
 local defaultFPS = 240
-local debounceTime = 0.1
+local debounceTime = 0.05
 local lastChangeTime = 0
 
 FPS.Slider({
@@ -323,28 +323,6 @@ FPS.Toggle({
         
         game:GetService("RunService").Heartbeat:Connect(function()
             updateLOD(game.Players.LocalPlayer)
-        end)
-    end,
-    Enabled = false
-})
-FPS.Toggle({
-    Text = "Limitar Quantidade de Partes",
-    Callback = function(Value)
-        local maxParts = 500
-        local partCount = 0
-        
-        game:GetService("RunService").Heartbeat:Connect(function()
-            if Value then
-                partCount = 0
-                for _, object in pairs(workspace:GetDescendants()) do
-                    if object:IsA("BasePart") then
-                        partCount = partCount + 1
-                        if partCount > maxParts then
-                            object:Destroy()  
-                        end
-                    end
-                end
-            end
         end)
     end,
     Enabled = false
